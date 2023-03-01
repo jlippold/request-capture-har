@@ -1,5 +1,3 @@
-var fs = require('fs');
-var pkg = require('./package.json');
 
 function buildHarHeaders (headers) {
   return headers ? Object.keys(headers).map(function (key) {
@@ -53,11 +51,11 @@ HarWrapper.prototype.clear = function () {
   this.earliestTime = new Date(2099, 1, 1);
 };
 
-HarWrapper.prototype.saveHar = function (fileName) {
+HarWrapper.prototype.getHar = function () {
   var httpArchive = {
     log: {
       version: '1.2',
-      creator: {name: 'request-capture-har', version: pkg.version},
+      creator: {name: 'request-capture-har', version: '1.0'},
       pages: [{
         startedDateTime: new Date(this.earliestTime).toISOString(),
         id: 'request-capture-har',
@@ -67,12 +65,20 @@ HarWrapper.prototype.saveHar = function (fileName) {
       entries: this.entries
     }
   };
-  fs.writeFileSync(fileName, JSON.stringify(httpArchive, null, 2));
+  return httpArchive;
+};
+
+HarWrapper.prototype.getEntries = function () {
+  return this.entries;
 };
 
 HarWrapper.prototype.buildTimings = function (entry, response) {
-  var startTs = response.request.startTime;
-  if (!startTs) return;
+  var startTs = new Date();
+  if (response.request.startTime) {
+    startTs = response.request.startTime;
+  } else {
+    response.request.startTime = startTs;
+  }
 
   var endTs = startTs + response.elapsedTime;
   var totalTime = endTs - startTs;
